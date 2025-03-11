@@ -42,16 +42,38 @@ module "ec2" {
   container_port = var.container_port
   fe_repo_name = module.codecommit.fe_repo_name
   ecs_task_role_name = var.ecs_task_role_name
+  private_subnets = module.vpc.private_subnets
+  default_branch = var.default_branch
+  ecs_task_execution_role_name = var.ecs_task_execution_role_name
 
   depends_on = [ module.ecr ]
 }
 
-/*
+module "alb" {
+  source = "./alb"
+  prefix = var.prefix
+  vpc_id = module.vpc.vpc_id
+  public_subnets = module.vpc.public_subnets
+  alb_sg_id = module.vpc.alb_sg_id
+
+}
+
 module "ecs" {
   source = "./ecs"
   prefix = var.prefix
   cluster_name = var.cluster_name
   ecs_task_role_name = var.ecs_task_role_name
+  ecs_task_execution_role_name = var.ecs_task_execution_role_name
+  task_definition_name = var.task_definition_name
+  container_name = var.container_name
+  account_id = data.aws_caller_identity.current.account_id
+  region = var.region
+  ecr_backend_name = module.ecr.ecr_backend_name
+  container_port = var.container_port
+  service_sg_id = module.vpc.service_sg_id
+  private_subnets = module.vpc.private_subnets
+  service_target_group_arn = module.alb.service_target_group_arn
+  service_name = var.service_name
 
   depends_on = [ module.ec2 ]
-}*/
+}
