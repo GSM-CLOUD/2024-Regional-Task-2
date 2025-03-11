@@ -26,39 +26,15 @@ resource "aws_instance" "bastion" {
   user_data = <<-EOF
 #!/bin/bash
 sudo su
-export HOME=/root
+set -e
+set -x
+
+echo "complete"
 yum install -y docker
 systemctl enable docker
 systemctl restart docker
-dnf install git -y
-yum install unzip -y
 
-git config --global credential.helper '!aws codecommit credential-helper $@'
-git config --global credential.UseHttpPath true
-
-aws s3 cp s3://${var.file_bucket_name}/backend/skills-backend.zip .
-
-git clone https://git-codecommit.${var.region}.amazonaws.com/v1/repos/${var.be_repo_name}
-
-unzip ./skills-backend.zip -d ./${var.be_repo_name}
-cd ${var.be_repo_name}
-
-cat <<EOT > Dockerfile
-FROM gradle:jdk17-alpine
-
-COPY . /app
-
-WORKDIR /app
-
-RUN chmod +x ./gradlew
-
-RUN ./gradlew build
-
-EXPOSE 8080
-
-CMD [ "java", "-jar", "build/libs/skills-backend-0.0.1-SNAPSHOT.jar" ]
-EOT
-
+echo "complete"
 cat <<EOT > buildspec.yaml
 version: 0.2
 
@@ -66,24 +42,25 @@ phases:
   pre_build:
     commands:
       - echo Login to ECR
-      - aws ecr get-login-password --region "${var.region}" | sudo docker login --username AWS --password-stdin "${var.account_id}.dkr.ecr.${var.region}.amazonaws.com"
+      - aws ecr get-login-password --region ${var.region} | docker login --username AWS --password-stdin ${var.account_id}.dkr.ecr.ap-northeast-2.amazonaws.com
       - chmod +x ./gradlew
       - ./gradlew build
   build:
     commands:
       - echo Build started
-      - docker build -t "${var.ecr_backend_name}:latest" .
-      - docker tag "${var.ecr_backend_name}:latest" "${var.account_id}.dkr.ecr.${var.region}.amazonaws.com/${var.ecr_backend_name}:latest"
+      - docker build -t ${var.ecr_backend_name} .
+      - docker tag ${var.ecr_backend_name}:latest ${var.account_id}.dkr.ecr.${var.region}.amazonaws.com/${var.ecr_backend_name}:latest
   post_build:
     commands:
       - echo Push to ECR
-      - docker push "${var.account_id}.dkr.ecr.${var.region}.amazonaws.com/${var.ecr_backend_name}:latest"
+      - docker push ${var.account_id}.dkr.ecr.${var.region}.amazonaws.com/${var.ecr_backend_name}:latest
 artifacts:
   files:
     - appspec.yaml
     - taskdef.json
 EOT
 
+echo "complete"
 cat <<EOT > appspec.yaml
 version: 0.2
 Resources:
@@ -102,15 +79,16 @@ Resources:
         NetworkConfiguration:
           AwsvpcConfiguration:
             Subnets:
-              - "${var.public_subnets[0]}" 
-              - "${var.public_subnets[1]}"
+              - ${var.private_subnets[0]}
+              - ${var.private_subnets[1]}
             SecurityGroups:
-              - "${aws_security_group.service-sg.id}"
+              - ${aws_security_group.service-sg.id}
 EOT
 
+echo "complete"
 cat <<EOT > taskdef.json
 {
-  "executionRoleArn": "arn:aws:iam::${var.account_id}:role/${var.ecs_task_role_name}",
+  "executionRoleArn": "arn:aws:iam::${var.account_id}:role/${var.ecs_task_execution_role_name}",
   "taskRoleArn": "arn:aws:iam::${var.account_id}:role/${var.ecs_task_role_name}",
   "containerDefinitions": [
     {
@@ -118,8 +96,8 @@ cat <<EOT > taskdef.json
       "image": "${var.account_id}.dkr.ecr.${var.region}.amazonaws.com/${var.ecr_backend_name}:latest",
       "portMappings": [
         {
-          "containerPort": ${var.container_port},
-          "hostPort": ${var.container_port},
+          "containerPort": "${var.container_port}",
+          "hostPort": "${var.container_port}",
           "protocol": "tcp"
         }
       ]
@@ -133,27 +111,54 @@ cat <<EOT > taskdef.json
   "memory": "1024",
   "family": "${var.task_definition_name}"
 }
+EOT
 
+echo "complete"
+yum install git -y
+
+export HOME=/root
+git config --global credential.helper '!aws codecommit credential-helper $@'
+git config --global credential.UseHttpPath true
+
+git clone https://git-codecommit.${var.region}.amazonaws.com/v1/repos/${var.be_repo_name}
+git clone https://git-codecommit.${var.region}.amazonaws.com/v1/repos/${var.fe_repo_name}
+
+echo "complete"
+aws s3 cp s3://${var.file_bucket_name}/backend/ ./${var.be_repo_name} --recursive
+aws s3 cp s3://${var.file_bucket_name}/frontend/ ./${var.fe_repo_name} --recursive
+
+mv ./buildspec.yaml ./${var.be_repo_name}/
+mv ./appspec.yaml ./${var.be_repo_name}/
+mv ./taskdef.json ./${var.be_repo_name}/
+
+cd ${var.be_repo_name}
+unzip ./*.zip -d .
+rm -rf *.zip
+
+echo "complete"
+aws ecr get-login-password --region ${var.region} | docker login --username AWS --password-stdin ${var.account_id}.dkr.ecr.${var.region}.amazonaws.com
+docker build -t ${var.ecr_backend_name} .
+docker tag ${var.ecr_backend_name}:latest ${var.account_id}.dkr.ecr.${var.region}.amazonaws.com/${var.ecr_backend_name}:latest
+docker push ${var.account_id}.dkr.ecr.${var.region}.amazonaws.com/${var.ecr_backend_name}:latest
+
+echo "complete"
 git init
 git add .
 git commit -m "Initial commit"
-git checkout -b main
-git push origin main
+git checkout -b ${var.default_branch}
+git push origin ${var.default_branch}
 
-cd ~
+cd ..
 
-aws s3 cp s3://${var.file_bucket_name}/index.html .
-
-git clone https://git-codecommit.${var.region}.amazonaws.com/v1/repos/${var.fe_repo_name}
-
-mv ./index.html ./${var.fe_repo_name}
-
+echo "complete"
 cd ${var.fe_repo_name}
 
+echo "complete"
+git init
 git add .
 git commit -m "Initial commit"
-git checkout -b main
-git push origin main
+git checkout -b ${var.default_branch}
+git push origin ${var.default_branch}
 EOF
 
 
