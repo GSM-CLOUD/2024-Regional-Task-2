@@ -17,6 +17,11 @@ resource "aws_s3_bucket_public_access_block" "s3_backend_bucket_public_access" {
 resource "aws_s3_bucket" "s3_bucket_frontend" {
   bucket = "${var.prefix}-frontend-${var.bucket_custom_prefix}"
   force_destroy = true
+
+  website {
+    index_document = "index.html"
+  }
+
   tags = {
     "Name" = "${var.prefix}-frontend-${var.bucket_custom_prefix}"
   }
@@ -41,7 +46,7 @@ resource "aws_s3_object" "frontend-dev" {
   bucket = aws_s3_bucket.s3_bucket_file.id
   key = "/frontend/index.html"
   source = "${path.module}/app/index.html"
-  content_type = "application/html"
+  content_type = "text/html"
 }
 
 resource "aws_s3_object" "dockerfile-dev" {
@@ -55,5 +60,5 @@ resource "aws_s3_object" "frontend-production" {
   bucket = aws_s3_bucket.s3_bucket_frontend.id
   key = "index.html"
   source = "${path.module}/app/index.html"
-  content_type = "application/html"
+  content_type = "text/html"
 }

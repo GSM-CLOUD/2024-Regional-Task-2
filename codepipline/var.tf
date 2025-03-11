@@ -15,3 +15,7 @@ variable "region" {}
 variable "task_definition_name" {}
 
 variable "ecs_task_execution_role_name" {}
+
+variable "frontend_repo_name" {}
+
+variable "frontend_bucket_name" {}

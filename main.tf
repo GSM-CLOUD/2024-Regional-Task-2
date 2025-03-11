@@ -109,6 +109,8 @@ module "codepipeline" {
   region = var.region
   task_definition_name = var.task_definition_name
   ecs_task_execution_role_name = var.ecs_task_execution_role_name
+  frontend_repo_name = module.codecommit.fe_repo_name
+  frontend_bucket_name = module.s3.bucket_name
 
   depends_on = [ module.codedeploy ]
 }
