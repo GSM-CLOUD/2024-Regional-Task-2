@@ -24,10 +24,10 @@ variable "container_port" {}
 
 variable "fe_repo_name" {}
 
-variable "ecs_task_role_name" {}
-
 variable "private_subnets" {}
 
 variable "default_branch" {}
 
 variable "ecs_task_execution_role_name" {}
+
+variable "service_sg_id" {}

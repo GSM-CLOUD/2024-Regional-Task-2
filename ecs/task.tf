@@ -1,7 +1,7 @@
 resource "aws_ecs_task_definition" "service_task_def" {
     family = var.task_definition_name
     execution_role_arn = aws_iam_role.ecs_excution_role.arn
-    task_role_arn = aws_iam_role.ecs_task_role.arn
+    task_role_arn = aws_iam_role.ecs_excution_role.arn
     network_mode = "awsvpc"
     requires_compatibilities = ["FARGATE"]
     cpu = "512"

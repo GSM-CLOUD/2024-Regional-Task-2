@@ -1,31 +1,22 @@
-resource "aws_lb_listener" "default" {
+resource "aws_lb_listener" "http_blue_listener" {
   load_balancer_arn = aws_lb.alb.arn
   port = 80
   protocol = "HTTP"
 
   default_action {
-    type = "fixed-response"
-    fixed_response {
-      status_code = 403
-      content_type = "text/plain"
-      message_body = "403 Forbidden"
-    }
+    type = "forward"
+    target_group_arn = aws_lb_target_group.blue_service_tg.arn
   }
 }
 
-resource "aws_lb_listener_rule" "service_rule" {
-    listener_arn = aws_lb_listener.default.arn
-    priority = 1
+resource "aws_lb_listener" "http_green_listener" {
+  load_balancer_arn = aws_lb.alb.arn
+  port = 8080
+  protocol = "HTTP"
 
-    action {
-      type = "forward"
-      target_group_arn = aws_lb_target_group.service_tg.arn
-    }
+  default_action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.green_service_tg.arn
+  }
 
-    condition {
-      path_pattern {
-        values = ["/api/*"]
-      }
-    }
-  
 }
