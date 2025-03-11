@@ -44,6 +44,13 @@ resource "aws_s3_object" "frontend-dev" {
   content_type = "application/html"
 }
 
+resource "aws_s3_object" "dockerfile-dev" {
+  bucket = aws_s3_bucket.s3_bucket_file.id
+  key = "/backend/Dockerfile"
+  source = "${path.module}/app/Dockerfile"
+  content_type = "application/Dockerfile"
+}
+
 resource "aws_s3_object" "frontend-production" {
   bucket = aws_s3_bucket.s3_bucket_frontend.id
   key = "index.html"
