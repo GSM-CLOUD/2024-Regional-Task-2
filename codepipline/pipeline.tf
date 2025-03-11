@@ -69,3 +69,47 @@ resource "aws_codepipeline" "backend_codepipeline" {
 resource "aws_s3_bucket" "codepipeline_artifacts" {
   bucket = "${var.prefix}-codepipeline-artifacts-bucket"
 }
+
+resource "aws_codepipeline" "frontend_codepipeline" {
+  name = "${var.prefix}-frontend-pipeline"
+  role_arn = aws_iam_role.codepipeline_role.arn
+
+  artifact_store {
+    type = "S3"
+    location = aws_s3_bucket.codepipeline_artifacts.bucket
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name = "Source"
+      category = "Source"
+      owner = "AWS"
+      provider = "CodeCommit"
+      version = "1"
+      output_artifacts = ["source_output"]
+
+      configuration = {
+        RepositoryName = var.frontend_repo_name
+        BranchName = "main"
+      }
+    }
+  }
+  stage {
+    name = "Deploy"
+
+    action {
+      name = "Deploy"
+      category = "Deploy"
+      owner = "AWS"
+      provider = "S3"
+      version = "1"
+      input_artifacts = ["source_output"]
+      configuration = {
+        BucketName = var.frontend_bucket_name
+        Extract = "true"
+      }
+    }
+  }
+}
