@@ -77,3 +77,12 @@ module "ecs" {
 
   depends_on = [ module.ec2 ]
 }
+
+module "codebuild" {
+  source = "./codebuild"
+  prefix = var.prefix
+  backend_repo_clone_url_http = module.codecommit.backend_repo_clone_url_http
+
+  depends_on = [ module.ecs ]
+  
+}
