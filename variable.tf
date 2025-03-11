@@ -30,10 +30,6 @@ variable "ecs_task_execution_role_name" {
     default = "skills-ecs-ecsTaskExecutionRole"
 }
 
-variable "ecs_task_role_name" {
-  default = "skills-ecs-task-role"
-}
-
 variable "task_definition_name" {
   default = "skills-task-definition"
 }

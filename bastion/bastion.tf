@@ -43,8 +43,6 @@ phases:
     commands:
       - echo Login to ECR
       - aws ecr get-login-password --region ${var.region} | docker login --username AWS --password-stdin ${var.account_id}.dkr.ecr.ap-northeast-2.amazonaws.com
-      - chmod +x ./gradlew
-      - ./gradlew build
   build:
     commands:
       - echo Build started
@@ -82,26 +80,26 @@ Resources:
               - ${var.private_subnets[0]}
               - ${var.private_subnets[1]}
             SecurityGroups:
-              - ${aws_security_group.service-sg.id}
+              - ${var.service_sg_id}
 EOT
 
 echo "complete"
 cat <<EOT > taskdef.json
 {
   "executionRoleArn": "arn:aws:iam::${var.account_id}:role/${var.ecs_task_execution_role_name}",
-  "taskRoleArn": "arn:aws:iam::${var.account_id}:role/${var.ecs_task_role_name}",
+  "taskRoleArn": "arn:aws:iam::${var.account_id}:role/${var.ecs_task_execution_role_name}",
   "containerDefinitions": [
     {
       "name": "${var.container_name}",
       "image": "${var.account_id}.dkr.ecr.${var.region}.amazonaws.com/${var.ecr_backend_name}:latest",
       "portMappings": [
         {
-          "containerPort": "${var.container_port}",
-          "hostPort": "${var.container_port}",
+          "containerPort": ${var.container_port},
+          "hostPort": ${var.container_port},
           "protocol": "tcp"
         }
       ]
-    ]
+    }
   ],
   "requiresCompatibilities": [
     "FARGATE"

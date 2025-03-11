@@ -1,4 +1,4 @@
-resource "aws_ecs_service" "service_service" {
+resource "aws_ecs_service" "backend_service" {
     name = "${var.service_name}"
     cluster = aws_ecs_cluster.cluster.id
     task_definition = aws_ecs_task_definition.service_task_def.arn
@@ -12,10 +12,14 @@ resource "aws_ecs_service" "service_service" {
     }
 
     load_balancer {
-      target_group_arn = var.service_target_group_arn
+      target_group_arn = var.blue_service_target_group_arn
       container_name = "${var.container_name}"
       container_port = "${var.container_port}"
     }
+
+    deployment_controller {
+    type = "CODE_DEPLOY"
+  }
 
     tags = {
       Name = "${var.service_name}"

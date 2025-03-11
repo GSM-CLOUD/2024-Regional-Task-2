@@ -3,7 +3,7 @@ data "aws_iam_policy_document" "assume_role" {
     effect = "Allow"
 
     principals {
-      type = "Service"
+      type        = "Service"
       identifiers = ["codebuild.amazonaws.com"]
     }
 
@@ -12,7 +12,7 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 resource "aws_iam_policy" "codebuild_ecr_policy" {
-  name        = "${var.prefix}-codebuild-ecr-policy"
+  name = "${var.prefix}-codebuild-ecr-policy"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -45,32 +45,54 @@ resource "aws_iam_role" "backend_build_role" {
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
-resource "aws_iam_policy_attachment" "codebuilddeveloper_policy_attachment" {
+resource "aws_iam_role_policy_attachment" "codebuilddeveloper_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess"
-  roles      = [aws_iam_role.backend_build_role.name]
-  name = "${var.prefix}-backend-policy-attachment"
+  role       = aws_iam_role.backend_build_role.name
 }
 
-resource "aws_iam_policy_attachment" "cloudwatch_policy_attachment" {
+resource "aws_iam_role_policy_attachment" "cloudwatch_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchFullAccess"
-  roles      = [aws_iam_role.backend_build_role.name]
-  name = "${var.prefix}-backend-policy-attachment"
+  role       = aws_iam_role.backend_build_role.name
 }
 
-resource "aws_iam_policy_attachment" "codecommit_policy_attachment" {
+resource "aws_iam_role_policy_attachment" "codecommit_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeCommitFullAccess"
-  roles      = [aws_iam_role.backend_build_role.name]
-  name = "${var.prefix}-backend-policy-attachment"
+  role       = aws_iam_role.backend_build_role.name
 }
 
-resource "aws_iam_policy_attachment" "ecr_policy_attachment" {
+resource "aws_iam_role_policy_attachment" "ecr_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonElasticContainerRegistryPublicFullAccess"
-  roles      = [aws_iam_role.backend_build_role.name]
-  name = "${var.prefix}-backend-policy-attachment"
+  role       = aws_iam_role.backend_build_role.name
 }
 
-resource "aws_iam_policy_attachment" "ecr_autorization_policy_attachment" {
+resource "aws_iam_role_policy_attachment" "ecr_autorization_policy_attachment" {
   policy_arn = aws_iam_policy.codebuild_ecr_policy.arn
-  roles      = [aws_iam_role.backend_build_role.name]
-  name = "${var.prefix}-backend-policy-attachment"
+  role       = aws_iam_role.backend_build_role.name
+}
+
+data "aws_iam_policy_document" "codebuild_s3_policy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:GetObjectVersion",
+      "s3:ListBucket",
+      "s3:PutObject"
+    ]
+    resources = [
+      "arn:aws:s3:::skills-codepipeline-artifacts-bucket",
+      "arn:aws:s3:::skills-codepipeline-artifacts-bucket/*"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "codebuild_s3_policy" {
+  name   = "${var.prefix}-codebuild-s3-policy"
+  role   = aws_iam_role.backend_build_role.id
+  policy = data.aws_iam_policy_document.codebuild_s3_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "s3_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+  role      = aws_iam_role.backend_build_role.name
 }
