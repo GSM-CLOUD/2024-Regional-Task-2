@@ -1,5 +1,5 @@
 resource "aws_iam_role" "ecs_excution_role" {
-    name = "${var.}"
+    name = "${var.ecs_task_execution_role_name}"
 
     assume_role_policy = jsonencode({
         "Version": "2012-10-17",
@@ -13,6 +13,10 @@ resource "aws_iam_role" "ecs_excution_role" {
             }
         ]
     })
+
+    tags = {
+      "Name" = "${var.ecs_task_execution_role_name}"
+    }
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_excution_policy_attach" {
@@ -35,5 +39,9 @@ resource "aws_iam_role" "ecs_task_role" {
             }
         ]
     })
+
+    tags = {
+      "Name" = "${var.ecs_task_role_name}"
+    }
   
 }
