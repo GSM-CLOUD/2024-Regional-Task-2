@@ -18,3 +18,11 @@ data "aws_ami" "al2023_ami_amd" {
 }
 
 data "aws_caller_identity" "current" {}
+
+data "aws_prefix_list" "cloudfront" {
+  prefix_list_id = "pl-22a6434b"
+}
+
+output "cloudfront_prefix_list_id" {
+  value = data.aws_prefix_list.cloudfront.prefix_list_id
+}
