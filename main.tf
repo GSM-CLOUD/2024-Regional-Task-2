@@ -2,6 +2,7 @@ module "vpc" {
   source = "./vpc"
   prefix = var.prefix
   region = var.region
+  source_prefix_list_cf = data.aws_prefix_list.cloudfront.prefix_list_id
 }
 
 module "s3" {
